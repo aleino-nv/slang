@@ -593,6 +593,18 @@ struct IRInst
     IRDecoration* getLastDecoration();
     IRInstList<IRDecoration> getDecorations();
 
+    // Step to the next child of a certain type, T
+    template<typename T>
+    T* getNextChildOfType(IRInst* child = nullptr)
+    {
+        for (IRInst* cc = child ? child->getNextInst() : getFirstDecorationOrChild(); cc != nullptr; cc = cc->getNextInst())
+        {
+            if (T* cct = as<T>(cc))
+                return cct;
+        }
+        return nullptr;
+    }
+
     // Look up a decoration in the list of decorations
     IRDecoration* findDecorationImpl(IROp op);
     template<typename T>
@@ -780,7 +792,18 @@ struct IRInst
     void removeOperand(Index index);
 
     /// Transfer any decorations of this instruction to the `target` instruction.
+    // TODO: rewrite as transferDecorationsTo(target) -> transferChildrenOfTypeTo<IRDecoration>(target)
     void transferDecorationsTo(IRInst* target);
+
+    template <typename T>
+    void transferChildrenOfTypeTo(IRInst* target)
+    {
+        for (T* cc = getNextChildOfType<T>(); cc != nullptr; cc = getNextChildOfType<T>(cc))
+        {
+            cc->removeFromParent();
+            cc->insertAtStart(target);
+        }
+    }
 
     /// Does this instruction have any uses?
     bool hasUses() const { return firstUse != nullptr; }
