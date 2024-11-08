@@ -597,7 +597,8 @@ struct IRInst
     template<typename T>
     T* getNextChildOfType(IRInst* child = nullptr)
     {
-        for (IRInst* cc = child ? child->getNextInst() : getFirstDecorationOrChild(); cc != nullptr; cc = cc->getNextInst())
+        for (IRInst* cc = child ? child->getNextInst() : getFirstDecorationOrChild(); cc != nullptr;
+             cc = cc->getNextInst())
         {
             if (T* cct = as<T>(cc))
                 return cct;
@@ -792,10 +793,11 @@ struct IRInst
     void removeOperand(Index index);
 
     /// Transfer any decorations of this instruction to the `target` instruction.
-    // TODO: rewrite as transferDecorationsTo(target) -> transferChildrenOfTypeTo<IRDecoration>(target)
+    // TODO: rewrite as transferDecorationsTo(target) ->
+    // transferChildrenOfTypeTo<IRDecoration>(target)
     void transferDecorationsTo(IRInst* target);
 
-    template <typename T>
+    template<typename T>
     void transferChildrenOfTypeTo(IRInst* target)
     {
         for (T* cc = getNextChildOfType<T>(); cc != nullptr; cc = getNextChildOfType<T>(cc))
