@@ -190,7 +190,7 @@ enum class DimType
 };
 
 // The WGSL texture dimension type is unsigned int, and anything else requires a conversion.
-template <typename S>
+template<typename S>
 static String wgslDimConversion(DimType type, S expr)
 {
     if (type == DimType::UInt)
@@ -199,9 +199,9 @@ static String wgslDimConversion(DimType type, S expr)
     }
     else
     {
-        switch(type)
+        switch (type)
         {
-            case DimType::Float:
+        case DimType::Float:
             {
                 // Conversion to float is exact for values <= 2^24.
                 String castExpr("f32(");
@@ -211,10 +211,10 @@ static String wgslDimConversion(DimType type, S expr)
             }
             break;
 
-            case DimType::Int:
+        case DimType::Int:
             {
-                // We can assume two's complement and just do a bitcast, since texture dimensions can't be
-                // anywhere near big enough to yield a negative result.
+                // We can assume two's complement and just do a bitcast, since texture dimensions
+                // can't be anywhere near big enough to yield a negative result.
                 String castExpr("bitcast<i32>(");
                 castExpr.append(expr);
                 castExpr.append(")");
@@ -222,9 +222,9 @@ static String wgslDimConversion(DimType type, S expr)
             }
             break;
 
-            default:
-                SLANG_UNREACHABLE("Unexpected DimType enum value");
-                break;
+        default:
+            SLANG_UNREACHABLE("Unexpected DimType enum value");
+            break;
         };
     }
 }
@@ -277,8 +277,11 @@ void TextureTypeInfo::writeGetDimensionFunctions()
                 params << t << "width";
                 metal << "(*($" << String(paramCount) << ") = $0.get_width("
                       << String(metalMipLevel) << ")),";
-                wgsl << "($" << String(paramCount) << ") = " <<
-                    wgslDimConversion(dimType, String("textureDimensions($0") + (includeMipInfo ? ", $1" : "") + ")") << ";";
+                wgsl << "($" << String(paramCount) << ") = "
+                     << wgslDimConversion(
+                            dimType,
+                            String("textureDimensions($0") + (includeMipInfo ? ", $1" : "") + ")")
+                     << ";";
 
                 sizeDimCount = 1;
                 break;
@@ -290,13 +293,15 @@ void TextureTypeInfo::writeGetDimensionFunctions()
                 metal << "(*($" << String(paramCount) << ") = $0.get_width("
                       << String(metalMipLevel) << ")),";
                 wgsl << "var dim = textureDimensions($0" << (includeMipInfo ? ", $1" : "") << ");";
-                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.x") << ";";
+                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.x")
+                     << ";";
 
                 ++paramCount;
                 params << t << "height";
                 metal << "(*($" << String(paramCount) << ") = $0.get_height("
                       << String(metalMipLevel) << ")),";
-                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.y") << ";";
+                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.y")
+                     << ";";
 
                 sizeDimCount = 2;
                 break;
@@ -307,19 +312,22 @@ void TextureTypeInfo::writeGetDimensionFunctions()
                 metal << "(*($" << String(paramCount) << ") = $0.get_width("
                       << String(metalMipLevel) << ")),";
                 wgsl << "var dim = textureDimensions($0" << (includeMipInfo ? ", $1" : "") << ");";
-                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.x") << ";";
+                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.x")
+                     << ";";
 
                 ++paramCount;
                 params << t << "height,";
                 metal << "(*($" << String(paramCount) << ") = $0.get_height("
                       << String(metalMipLevel) << ")),";
-                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.y") << ";";
+                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.y")
+                     << ";";
 
                 ++paramCount;
                 params << t << "depth";
                 metal << "(*($" << String(paramCount) << ") = $0.get_depth("
                       << String(metalMipLevel) << ")),";
-                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.z") << ";";
+                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "dim.z")
+                     << ";";
 
                 sizeDimCount = 3;
                 break;
@@ -335,7 +343,8 @@ void TextureTypeInfo::writeGetDimensionFunctions()
                 ++paramCount;
                 params << ", " << t << "elements";
                 metal << "(*($" << String(paramCount) << ") = $0.get_array_size()),";
-                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "textureNumLayers($0)") << ";";
+                wgsl << "($" << String(paramCount)
+                     << ") = " << wgslDimConversion(dimType, "textureNumLayers($0)") << ";";
             }
 
             if (isMultisample)
@@ -343,7 +352,8 @@ void TextureTypeInfo::writeGetDimensionFunctions()
                 ++paramCount;
                 params << ", " << t << "sampleCount";
                 metal << "(*($" << String(paramCount) << ") = $0.get_num_samples()),";
-                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "textureNumSamples($0)") << ";";
+                wgsl << "($" << String(paramCount)
+                     << ") = " << wgslDimConversion(dimType, "textureNumSamples($0)") << ";";
             }
 
             if (includeMipInfo)
@@ -351,7 +361,8 @@ void TextureTypeInfo::writeGetDimensionFunctions()
                 ++paramCount;
                 params << ", " << t << "numberOfLevels";
                 metal << "(*($" << String(paramCount) << ") = $0.get_num_mip_levels()),";
-                wgsl << "($" << String(paramCount) << ") = " << wgslDimConversion(dimType, "textureNumLevels($0)") << ";";
+                wgsl << "($" << String(paramCount)
+                     << ") = " << wgslDimConversion(dimType, "textureNumLevels($0)") << ";";
             }
 
             metal.reduceLength(metal.getLength() - 1); // drop the last comma
