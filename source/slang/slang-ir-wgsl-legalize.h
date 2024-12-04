@@ -5,6 +5,7 @@
 namespace Slang
 {
 class DiagnosticSink;
+class TargetProgram;
 
-void legalizeIRForWGSL(IRModule* module, DiagnosticSink* sink);
+void legalizeIRForWGSL(TargetProgram* targetProgram, IRModule* module, DiagnosticSink* sink);
 } // namespace Slang

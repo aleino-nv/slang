@@ -1341,7 +1341,7 @@ Result linkAndOptimizeIR(
     case CodeGenTarget::WGSLSPIRV:
     case CodeGenTarget::WGSLSPIRVAssembly:
         {
-            legalizeIRForWGSL(irModule, sink);
+            legalizeIRForWGSL(targetProgram, irModule, sink);
         }
         break;
 

@@ -1,8 +1,13 @@
 #include "slang-ir-wgsl-legalize.h"
 
+#include "slang-ir-dce.h"
 #include "slang-ir-insts.h"
 #include "slang-ir-legalize-varying-params.h"
 #include "slang-ir-legalize-global-values.h"
+#include "slang-ir-peephole.h"
+#include "slang-ir-redundancy-removal.h"
+#include "slang-ir-sccp.h"
+#include "slang-ir-simplify-cfg.h"
 #include "slang-ir-util.h"
 #include "slang-ir.h"
 #include "slang-parameter-binding.h"
@@ -1617,7 +1622,47 @@ struct GlobalInstInliningContext: public GlobalInstInliningContextGeneric
     }
 };
 
-void legalizeIRForWGSL(IRModule* module, DiagnosticSink* sink)
+static void simplifyIRForWGSLLegalization(TargetProgram* target, DiagnosticSink* sink, IRModule* module)
+{
+    bool changed = true;
+    const int kMaxIterations = 8;
+    const int kMaxFuncIterations = 16;
+    int iterationCounter = 0;
+
+    while (changed && iterationCounter < kMaxIterations)
+    {
+        if (sink && sink->getErrorCount())
+            break;
+
+        changed = false;
+
+        changed |= applySparseConditionalConstantPropagationForGlobalScope(module, sink);
+        changed |= peepholeOptimizeGlobalScope(target, module);
+
+        for (auto inst : module->getGlobalInsts())
+        {
+            auto func = as<IRGlobalValueWithCode>(inst);
+            if (!func)
+                continue;
+            bool funcChanged = true;
+            int funcIterationCount = 0;
+            while (funcChanged && funcIterationCount < kMaxFuncIterations)
+            {
+                funcChanged = false;
+                funcChanged |= applySparseConditionalConstantPropagation(func, sink);
+                funcChanged |= peepholeOptimize(target, func);
+                funcChanged |= removeRedundancyInFunc(func);
+                CFGSimplificationOptions options;
+                options.removeTrivialSingleIterationLoops = true;
+                options.removeSideEffectFreeLoops = false;
+                funcChanged |= simplifyCFG(func, options);
+                eliminateDeadCode(func);
+            }
+        }
+    }
+}
+
+void legalizeIRForWGSL(TargetProgram * targetProgram, IRModule* module, DiagnosticSink* sink)
 {
     List<EntryPointInfo> entryPoints;
     for (auto inst : module->getGlobalInsts())
@@ -1644,6 +1689,7 @@ void legalizeIRForWGSL(IRModule* module, DiagnosticSink* sink)
     context.processInst(module->getModuleInst());
 
     GlobalInstInliningContext().inlineGlobalValues(module);
+    simplifyIRForWGSLLegalization(targetProgram, sink, module);
 }
 
 } // namespace Slang
