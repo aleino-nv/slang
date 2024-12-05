@@ -160,7 +160,10 @@ bool GlobalInstInliningContextGeneric::shouldInlineInst(IRInst* inst)
     return result;
 }
 
-IRInst* GlobalInstInliningContextGeneric::inlineInst(IRBuilder& builder, IRCloneEnv& cloneEnv, IRInst* inst)
+IRInst* GlobalInstInliningContextGeneric::inlineInst(
+    IRBuilder& builder,
+    IRCloneEnv& cloneEnv,
+    IRInst* inst)
 {
     IRInst* result;
     if (cloneEnv.mapOldValToNew.tryGetValue(inst, result))
