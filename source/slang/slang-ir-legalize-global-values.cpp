@@ -41,7 +41,8 @@ void GlobalInstInliningContextGeneric::inlineGlobalValuesAndRemoveIfUnused(IRMod
 
         // Since certain globals that appear in the IR are considered illegal for all targets,
         // e.g. calls to functions, we delete globals which no longer have uses after inlining.
-        if (!inst->hasUses())
+        // TODO: Explain why tests/spirv/global-compute.slang fails if we don't exclude kIROp_SPIRVAsm
+        if (!inst->hasUses() && inst->getOp() != kIROp_SPIRVAsm)
             inst->removeAndDeallocate();
     }
 }
