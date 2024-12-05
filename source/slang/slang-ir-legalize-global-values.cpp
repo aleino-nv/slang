@@ -6,9 +6,9 @@
 namespace Slang
 {
 
-void GlobalInstInliningContextGeneric::inlineGlobalValues(IRModule * module)
+void GlobalInstInliningContextGeneric::inlineGlobalValuesAndRemoveIfUnused(IRModule* module)
 {
-    List<IRUse*> globalInstUsesToInline;
+    Dictionary<IRInst*, List<IRUse*>> globalInstUsesToInline;
 
     for (auto globalInst : module->getGlobalInsts())
     {
@@ -17,20 +17,32 @@ void GlobalInstInliningContextGeneric::inlineGlobalValues(IRModule * module)
             for (auto use = globalInst->firstUse; use; use = use->nextUse)
             {
                 if (getParentFunc(use->getUser()) != nullptr)
-                    globalInstUsesToInline.add(use);
+                {
+                    globalInstUsesToInline.getOrAddValue(globalInst, List<IRUse*>()).add(use);
+                }
             }
         }
     }
 
-    for (auto use : globalInstUsesToInline)
+    for (auto globalInstUses : globalInstUsesToInline)
     {
-        auto user = use->getUser();
-        IRBuilder builder(user);
-        builder.setInsertBefore(getOutsideASM(user));
-        IRCloneEnv cloneEnv;
-        auto val = maybeInlineGlobalValue(builder, use->getUser(), use->get(), cloneEnv);
-        if (val != use->get())
-            builder.replaceOperand(use, val);
+        auto& inst = globalInstUses.first;
+        auto& uses = globalInstUses.second;
+        for (auto use : uses)
+        {
+            auto user = use->getUser();
+            IRBuilder builder(user);
+            builder.setInsertBefore(getOutsideASM(user));
+            IRCloneEnv cloneEnv;
+            auto val = maybeInlineGlobalValue(builder, use->getUser(), use->get(), cloneEnv);
+            if (val != use->get())
+                builder.replaceOperand(use, val);
+        }
+
+        // Since certain globals that appear in the IR are considered illegal for all targets,
+        // e.g. calls to functions, we delete globals which no longer have uses after inlining.
+        if (!inst->hasUses())
+            inst->removeAndDeallocate();
     }
 }
 
