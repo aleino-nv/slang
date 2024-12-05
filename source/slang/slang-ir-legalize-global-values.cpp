@@ -6,9 +6,37 @@
 namespace Slang
 {
 
-void GlobalInstInliningContextGeneric::inlineGlobalValues(IRModule * module)
+// Returns true iff 'rootInst', or any of it's descendants, satisfies 'predicate'.
+template<typename P>
+bool hasDescendantSatisfyingPredicate(IRInst* rootInst, P predicate)
+{
+    IRInst* inst = rootInst;
+    while (true)
+    {
+        if (predicate(inst))
+            return true;
+
+        // Step to next IRInst according to preorder
+        if (inst->getFirstDecorationOrChild())
+            inst = inst->getFirstDecorationOrChild();
+        else
+        {
+            while (!inst->getNextInst())
+            {
+                inst = inst->getParent();
+                if (inst == rootInst)
+                    return false;
+            }
+            inst = inst->getNextInst();
+        }
+    }
+    return false;
+}
+
+void GlobalInstInliningContextGeneric::inlineGlobalValuesAndRemoveIfUnused(IRModule* module)
 {
     List<IRUse*> globalInstUsesToInline;
+    List<IRInst*> globalInstsToConsiderDeleting;
 
     for (auto globalInst : module->getGlobalInsts())
     {
@@ -17,8 +45,11 @@ void GlobalInstInliningContextGeneric::inlineGlobalValues(IRModule * module)
             for (auto use = globalInst->firstUse; use; use = use->nextUse)
             {
                 if (getParentFunc(use->getUser()) != nullptr)
+                {
                     globalInstUsesToInline.add(use);
+                }
             }
+            globalInstsToConsiderDeleting.add(globalInst);
         }
     }
 
@@ -32,6 +63,15 @@ void GlobalInstInliningContextGeneric::inlineGlobalValues(IRModule * module)
         if (val != use->get())
             builder.replaceOperand(use, val);
     }
+
+    // Since certain globals that appear in the IR are considered illegal for all targets,
+    // e.g. calls to functions, we delete globals which no longer have uses (or children with uses) after inlining.
+    for (auto& globalInst: globalInstsToConsiderDeleting)
+    {
+        if (!hasDescendantSatisfyingPredicate(globalInst, [](IRInst* inst){return inst->hasUses();}))
+            globalInst->removeAndDeallocate();
+    }
+
 }
 
 bool GlobalInstInliningContextGeneric::isLegalGlobalInst(IRInst* inst)
