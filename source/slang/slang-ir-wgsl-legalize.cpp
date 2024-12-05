@@ -1688,7 +1688,7 @@ void legalizeIRForWGSL(TargetProgram * targetProgram, IRModule* module, Diagnost
     // Go through every instruction in the module and legalize them as needed.
     context.processInst(module->getModuleInst());
 
-    GlobalInstInliningContext().inlineGlobalValues(module);
+    GlobalInstInliningContext().inlineGlobalValuesAndRemoveIfUnused(module);
     simplifyIRForWGSLLegalization(targetProgram, sink, module);
 }
 
