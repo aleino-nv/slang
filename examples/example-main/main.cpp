@@ -1,6 +1,7 @@
+#include "../stacktrace-windows/common.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include "../stacktrace-windows/common.h"
 
 extern int exampleMain(int argc, char** argv);
 

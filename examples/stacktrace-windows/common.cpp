@@ -1,13 +1,14 @@
-#include <vector>
-#include <string>
-#include <windows.h>
-#include <inttypes.h>
-#include <dbghelp.h>
 #include "common.h"
 
-#define SLANG_EXAMPLE_LOG_ERROR(...)                \
-    printf("error: %s: %d: ", __FILE__, __LINE__);  \
-    print(__VA_ARGS__);                             \
+#include <dbghelp.h>
+#include <inttypes.h>
+#include <string>
+#include <vector>
+#include <windows.h>
+
+#define SLANG_EXAMPLE_LOG_ERROR(...)               \
+    printf("error: %s: %d: ", __FILE__, __LINE__); \
+    print(__VA_ARGS__);                            \
     printf("\n");
 
 static void print() {}
@@ -21,19 +22,16 @@ static bool getModuleFileNameAtAddress(DWORD64 const address, std::string& fileN
 {
     HMODULE module = NULL;
     {
-        BOOL result =
-            GetModuleHandleEx(
-                              GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                              GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                              (LPCTSTR)address,
-                              &module
-                              );
-        if(result == 0)
+        BOOL result = GetModuleHandleEx(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            (LPCTSTR)address,
+            &module);
+        if (result == 0)
         {
             SLANG_EXAMPLE_LOG_ERROR(GetLastError());
             return false;
         }
-        if(module == NULL)
+        if (module == NULL)
         {
             SLANG_EXAMPLE_LOG_ERROR();
             return false;
@@ -42,15 +40,15 @@ static bool getModuleFileNameAtAddress(DWORD64 const address, std::string& fileN
 
     std::vector<char> buffer(1U << 8U);
     uint32_t constexpr maxBufferSize = 1U << 20;
-    while(buffer.size() < maxBufferSize)
+    while (buffer.size() < maxBufferSize)
     {
         DWORD result = GetModuleFileNameA(module, buffer.data(), buffer.size());
-        if(result == 0)
+        if (result == 0)
         {
             SLANG_EXAMPLE_LOG_ERROR(GetLastError());
             return false;
         }
-        else if(result == ERROR_INSUFFICIENT_BUFFER)
+        else if (result == ERROR_INSUFFICIENT_BUFFER)
         {
             buffer.resize(buffer.size() << 1U);
         }
@@ -59,7 +57,7 @@ static bool getModuleFileNameAtAddress(DWORD64 const address, std::string& fileN
             break;
         }
     }
-    if(buffer.size() == maxBufferSize)
+    if (buffer.size() == maxBufferSize)
     {
         SLANG_EXAMPLE_LOG_ERROR();
         return false;
@@ -87,26 +85,24 @@ static bool printStack(HANDLE process, HANDLE thread, CONTEXT const& context)
     STACKFRAME64 frame = {};
     constexpr uint32_t maxFrameCount = 1U << 10;
     uint32_t frameIndex = 0U;
-    while(frameIndex < maxFrameCount)
+    while (frameIndex < maxFrameCount)
     {
         // Use the default routine
         PREAD_PROCESS_MEMORY_ROUTINE64 readMemoryRoutine = NULL;
         // Not sure what this is for, but documentation says most callers can pass NULL
         PTRANSLATE_ADDRESS_ROUTINE64 translateAddressRoutine = NULL;
         {
-            BOOL result =
-                StackWalk64(
-                            machineType,
-                            process,
-                            thread,
-                            &frame,
-                            &contextCopy,
-                            readMemoryRoutine,
-                            SymFunctionTableAccess64,
-                            SymGetModuleBase64,
-                            translateAddressRoutine
-                            );
-            if(result == FALSE)
+            BOOL result = StackWalk64(
+                machineType,
+                process,
+                thread,
+                &frame,
+                &contextCopy,
+                readMemoryRoutine,
+                SymFunctionTableAccess64,
+                SymGetModuleBase64,
+                translateAddressRoutine);
+            if (result == FALSE)
                 break;
         }
 
@@ -117,9 +113,8 @@ static bool printStack(HANDLE process, HANDLE thread, CONTEXT const& context)
             DWORD64 address = frame.AddrPC.Offset;
             // Not required, we want to look up the symbol exactly at the address
             PDWORD64 displacement = NULL;
-            BOOL result =
-                SymFromAddr(process, address, displacement, maybeSymbol);
-            if(result == FALSE)
+            BOOL result = SymFromAddr(process, address, displacement, maybeSymbol);
+            if (result == FALSE)
             {
                 SLANG_EXAMPLE_LOG_ERROR(GetLastError());
                 maybeSymbol = NULL;
@@ -129,10 +124,10 @@ static bool printStack(HANDLE process, HANDLE thread, CONTEXT const& context)
         printf("%u", frameIndex);
 
         std::string moduleFileName;
-        if(getModuleFileNameAtAddress(frame.AddrPC.Offset, moduleFileName))
+        if (getModuleFileNameAtAddress(frame.AddrPC.Offset, moduleFileName))
             printf(": %s", moduleFileName.c_str());
 
-        if(maybeSymbol)
+        if (maybeSymbol)
         {
             PSYMBOL_INFO& symbol = maybeSymbol;
 
@@ -142,8 +137,7 @@ static bool printStack(HANDLE process, HANDLE thread, CONTEXT const& context)
             DWORD displacement;
             if (SymGetLineFromAddr64(process, frame.AddrPC.Offset, &displacement, &line))
             {
-                printf(": %s: %s: %lu",
-                       symbol->Name, line.FileName, line.LineNumber);
+                printf(": %s: %s: %lu", symbol->Name, line.FileName, line.LineNumber);
             }
             else
             {
@@ -162,8 +156,9 @@ static bool printStack(HANDLE process, HANDLE thread, CONTEXT const& context)
 
 int exceptionFilter(_EXCEPTION_POINTERS* exception)
 {
-    printf("error: Exception 0x%x occurred. Stack trace:\n",
-           exception->ExceptionRecord->ExceptionCode);
+    printf(
+        "error: Exception 0x%x occurred. Stack trace:\n",
+        exception->ExceptionRecord->ExceptionCode);
 
     HANDLE process = GetCurrentProcess();
     HANDLE thread = GetCurrentThread();
@@ -173,9 +168,8 @@ int exceptionFilter(_EXCEPTION_POINTERS* exception)
         // The default search paths should suffice
         PCSTR symbolFileSearchPath = NULL;
         BOOL loadSymbolsOfLoadedModules = TRUE;
-        BOOL result =
-            SymInitialize(process, symbolFileSearchPath, loadSymbolsOfLoadedModules);
-        if(result == FALSE)
+        BOOL result = SymInitialize(process, symbolFileSearchPath, loadSymbolsOfLoadedModules);
+        if (result == FALSE)
         {
             printf("warning: Failed to load symbols\n");
         }
@@ -185,15 +179,15 @@ int exceptionFilter(_EXCEPTION_POINTERS* exception)
         }
     }
 
-    if(!printStack(process, thread, *exception->ContextRecord))
+    if (!printStack(process, thread, *exception->ContextRecord))
     {
         printf("warning: Failed to print complete stack trace!\n");
     }
 
-    if(symbolsLoaded)
+    if (symbolsLoaded)
     {
         BOOL result = SymCleanup(process);
-        if(result == FALSE)
+        if (result == FALSE)
         {
             SLANG_EXAMPLE_LOG_ERROR(GetLastError());
         }

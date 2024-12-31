@@ -1,16 +1,17 @@
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "../stacktrace-windows/common.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
+
 extern int exampleMain(int argc, char** argv);
-extern const char *const g_logFileName;
+extern const char* const g_logFileName;
 
 int WinMain(
-            HINSTANCE /* instance */,
-            HINSTANCE /* prevInstance */,
-            LPSTR /* commandLine */,
-            int /*showCommand*/)
+    HINSTANCE /* instance */,
+    HINSTANCE /* prevInstance */,
+    LPSTR /* commandLine */,
+    int /*showCommand*/)
 
 {
     __try

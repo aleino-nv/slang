@@ -1,11 +1,5 @@
 function(example dir)
-    cmake_parse_arguments(
-        ARG
-        "WIN32_EXECUTABLE"
-        ""
-        ""
-        ${ARGN}
-    )
+    cmake_parse_arguments(ARG "WIN32_EXECUTABLE" "" "" ${ARGN})
 
     set(debug_dir ${CMAKE_CURRENT_BINARY_DIR}/${dir})
 
@@ -39,19 +33,19 @@ function(example dir)
     endif()
 
     # Libraries providing a main function that prints stack traces on exceptions
-    if (CMAKE_SYSTEM_NAME MATCHES "Windows")
-      # On Windows we have two different versions: main for "console applications" and
-      # WinMain for normal Windows applications.
-      if (${ARG_WIN32_EXECUTABLE})
-        set (main_wrapper_libraries example-winmain)
-      else()
-        set (main_wrapper_libraries example-main)
-      endif()
-      # Add stack printing support
-      set (main_wrapper_libraries ${main_wrapper_libraries} stacktrace-windows)
-      set (main_wrapper_libraries ${main_wrapper_libraries} dbghelp.lib)
+    if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+        # On Windows we have two different versions: main for "console applications" and
+        # WinMain for normal Windows applications.
+        if(${ARG_WIN32_EXECUTABLE})
+            set(main_wrapper_libraries example-winmain)
+        else()
+            set(main_wrapper_libraries example-main)
+        endif()
+        # Add stack printing support
+        set(main_wrapper_libraries ${main_wrapper_libraries} stacktrace-windows)
+        set(main_wrapper_libraries ${main_wrapper_libraries} dbghelp.lib)
     else()
-      set (main_wrapper_libraries example-main)
+        set(main_wrapper_libraries example-main)
     endif()
 
     slang_add_target(
@@ -94,23 +88,9 @@ if(SLANG_ENABLE_EXAMPLES)
             $<$<BOOL:${SLANG_ENABLE_CUDA}>:CUDA::cuda_driver>
         FOLDER examples
     )
-    slang_add_target(
-        example-main
-        STATIC
-        FOLDER examples
-    )
-    slang_add_target(
-        example-winmain
-        STATIC
-        FOLDER examples
-        EXCLUDE_FROM_ALL
-    )
-    slang_add_target(
-        stacktrace-windows
-        STATIC
-        FOLDER examples
-        EXCLUDE_FROM_ALL
-    )
+    slang_add_target(example-main STATIC FOLDER examples)
+    slang_add_target(example-winmain STATIC FOLDER examples EXCLUDE_FROM_ALL)
+    slang_add_target(stacktrace-windows STATIC FOLDER examples EXCLUDE_FROM_ALL)
 
     add_custom_target(
         all-examples
