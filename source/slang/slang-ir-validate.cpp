@@ -467,7 +467,7 @@ void validateAtomicOperations(DiagnosticSink* sink, IRInst* inst)
 {
     // There may be unused functions containing violations after address space specialization.
     if (auto func = as<IRFunc>(inst))
-        if(!(func->hasUses() || func->findDecoration<IREntryPointDecoration>()))
+        if (!(func->hasUses() || func->findDecoration<IREntryPointDecoration>()))
             return;
 
     switch (inst->getOp())

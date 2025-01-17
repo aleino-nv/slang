@@ -2255,7 +2255,8 @@ DIAGNOSTIC(
     41403,
     Error,
     invalidAtomicDestinationPointer,
-    "cannot perform atomic operation because destination is neither groupshared nor from a device buffer.")
+    "cannot perform atomic operation because destination is neither groupshared nor from a device "
+    "buffer.")
 
 //
 // 5xxxx - Target code generation.
