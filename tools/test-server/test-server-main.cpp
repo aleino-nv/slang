@@ -492,8 +492,8 @@ SlangResult TestServer::_executeTool(const JSONRPCCall& call)
     if (!session)
     {
         return SLANG_FAIL;
-    }
-
+    }	
+	
     // Work out the args sent to the shared library
     List<const char*> toolArgs;
 
@@ -537,6 +537,21 @@ SlangResult TestServer::_executeTool(const JSONRPCCall& call)
 
 SlangResult TestServer::execute()
 {
+    DiagnosticSink sink;
+    StdWriters stdWriters;
+    auto func = getToolFunction("render-test", &sink);
+    List<const char*> toolArgs;
+    toolArgs.add("render-test");
+    toolArgs.add("tests/bugs/paren-insertion-bug.slang");
+    toolArgs.add("-shaderobj");
+    toolArgs.add("-dx12");
+    toolArgs.add("-slang");
+    toolArgs.add("-compute");
+    toolArgs.add("-o");
+    toolArgs.add("tests/bugs/paren-insertion-bug.slang.2.actual.txt");
+    const SlangResult funcRes =
+        func(&stdWriters, getOrCreateGlobalSession(), int(toolArgs.getCount()), toolArgs.begin());	
+
     while (m_connection->isActive() && !m_quit)
     {
         // Failure doesn't make the execution terminate
@@ -604,6 +619,7 @@ void TestReporter::addResult(TestResult result)
 
 SlangResult _execute(int argc, const char* const* argv)
 {
+	
     TestServer server;
     SLANG_RETURN_ON_FAIL(server.init(argc, argv));
     SLANG_RETURN_ON_FAIL(server.execute());
