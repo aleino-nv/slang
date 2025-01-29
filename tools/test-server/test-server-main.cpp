@@ -537,6 +537,10 @@ SlangResult TestServer::_executeTool(const JSONRPCCall& call)
 
 SlangResult TestServer::execute()
 {
+    int a = 0;
+    while (!a)
+    {
+    }
     DiagnosticSink sink;
     StdWriters stdWriters;
     auto func = getToolFunction("render-test", &sink);
