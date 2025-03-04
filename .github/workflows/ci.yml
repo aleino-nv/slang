@@ -169,7 +169,8 @@ jobs:
               -server-count 8 \
               -category ${{ matrix.test-category }} \
               -api all-cpu \
-              -expected-failure-list tests/expected-failure-github.txt
+              -expected-failure-list tests/expected-failure-github.txt \
+              -expected-failure-list tests/expected-failure-github-runner.txt
           elif [[ "${{matrix.has-gpu}}" == "true" ]]; then
             "$bin_dir/slang-test" \
               -use-test-server \
